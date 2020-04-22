@@ -45,7 +45,7 @@ io.on("connect", (socket) => {
   socket.on("sendMessage", (message, callback) => {
     const user = getUser(socket.id);
 
-    if (user.room !== undefined) {
+    if (user !== undefined) {
       io.to(user.room).emit("message", { user: user.name, text: message });
     }
 
