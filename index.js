@@ -17,28 +17,41 @@ app.use(cors());
 
 io.on("connect", (socket) => {
   socket.on("join", ({ name, room }, callback) => {
-    const { error, user } = addUser({ id: socket.id, name, room });
+    limitTotalUsersPerRoom(10);
+    async function limitTotalUsersPerRoom(limit) {
+      const limitUsers = await io.in(room).clients((err, clients) => {
+        let currentUsers = clients.length + 1;
 
-    if (error) return callback(error);
-    else {
-      socket.emit("message", {
-        user: "server",
-        text: `Hi ${user.name}, welcome to the room "${user.room}"`,
+        if (currentUsers > limit) {
+          const destination = "/";
+          socket.emit("redirect", destination);
+        } else {
+          socket.emit("allowEntry", true);
+          const { error, user } = addUser({ id: socket.id, name, room });
+
+          if (error) return callback(error);
+          else {
+            socket.emit("message", {
+              user: "server",
+              text: `Hi ${user.name}, welcome to the room "${user.room}"`,
+            });
+
+            socket.broadcast.to(user.room).emit("message", {
+              user: "server",
+              text: `${user.name} has joined the room`,
+            });
+
+            socket.join(user.room);
+
+            io.to(user.room).emit("roomData", {
+              room: user.room,
+              users: getUsersInRoom(user.room),
+            });
+
+            callback();
+          }
+        }
       });
-
-      socket.broadcast.to(user.room).emit("message", {
-        user: "server",
-        text: `${user.name} has joined the room`,
-      });
-
-      socket.join(user.room);
-
-      io.to(user.room).emit("roomData", {
-        room: user.room,
-        users: getUsersInRoom(user.room),
-      });
-
-      callback();
     }
   });
 
