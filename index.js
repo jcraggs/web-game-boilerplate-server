@@ -23,8 +23,7 @@ io.on("connect", (socket) => {
         let currentUsers = clients.length + 1;
 
         if (currentUsers > limit) {
-          const destination = "/";
-          socket.emit("redirect", destination);
+          socket.emit("roomFull");
         } else {
           socket.emit("allowEntry", true);
           const { error, user } = addUser({ id: socket.id, name, room });
