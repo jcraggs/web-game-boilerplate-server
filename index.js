@@ -94,7 +94,7 @@ io.on("connect", (socket) => {
     let userToReady = readyUser(socket.id, currentUsersList);
     const user = getUser(socket.id);
     if (userToReady !== undefined) {
-      if (user.room !== undefined) {
+      if (user !== undefined) {
         io.to(user.room).emit("roomData", {
           room: user.room,
           users: userToReady,
