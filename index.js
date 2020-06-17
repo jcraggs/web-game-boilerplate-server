@@ -105,9 +105,11 @@ io.on("connect", (socket) => {
 
   socket.on("startGame", () => {
     const user = getUser(socket.id);
-    io.to(user.room).emit("gameData", {
-      gameStarted: true,
-    });
+    if (user !== undefined) {
+      io.to(user.room).emit("gameData", {
+        gameStarted: true,
+      });
+    }
   });
 });
 
