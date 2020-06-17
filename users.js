@@ -1,6 +1,6 @@
-const users = [];
+let users = [];
 
-const addUser = ({ id, name, room }) => {
+const addUser = ({ id, name, room, limit }) => {
   name = name.trim().toLowerCase();
   room = room.trim().toLowerCase();
 
@@ -11,7 +11,7 @@ const addUser = ({ id, name, room }) => {
   if (!name || !room) return { error: "Username and room are required." };
   if (existingUser) return { error: `Username "${name}" is taken.` };
 
-  const user = { id, name, room };
+  const user = { id, name, room, ready: false, roomSizeLimit: limit };
 
   users.push(user);
 
@@ -26,6 +26,36 @@ const removeUser = (id) => {
 
 const getUser = (id) => users.find((user) => user.id === id);
 
-const getUsersInRoom = (room) => users.filter((user) => user.room === room);
+const getUsersInRoom = (room) => {
+  return users.filter((user) => user.room === room);
+};
 
-module.exports = { addUser, removeUser, getUser, getUsersInRoom };
+const readyUser = (id, currentUserList) => {
+  const userArr = currentUserList;
+  const index = userArr.findIndex((user) => user.id === id);
+
+  let updatedArray = [];
+
+  for (let i = 0; i < userArr.length; i++) {
+    if (i !== index) {
+      updatedArray.push(userArr[i]);
+    }
+    if (i === index) {
+      const userRef = userArr[index];
+      const readiedUser = {
+        id: userRef.id,
+        name: userRef.name,
+        room: userRef.room,
+        ready: !userRef.ready,
+        roomSizeLimit: userRef.roomSizeLimit,
+      };
+      updatedArray.push(readiedUser);
+    }
+  }
+
+  users = updatedArray;
+
+  return updatedArray;
+};
+
+module.exports = { addUser, removeUser, getUser, getUsersInRoom, readyUser };

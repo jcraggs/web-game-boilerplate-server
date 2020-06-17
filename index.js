@@ -3,7 +3,14 @@ const socketio = require("socket.io");
 const http = require("http");
 const cors = require("cors");
 
-const { addUser, removeUser, getUser, getUsersInRoom } = require("./users");
+const {
+  addUser,
+  removeUser,
+  getUser,
+  getUsersInRoom,
+  readyUser,
+} = require("./users");
+
 const PORT = process.env.PORT || 5000;
 
 const router = require("./router");
@@ -17,7 +24,10 @@ app.use(cors());
 
 io.on("connect", (socket) => {
   socket.on("join", ({ name, room }, callback) => {
-    limitTotalUsersPerRoom(10);
+    // Edit the number below to change the limit of users per room
+    limit = 10;
+    limitTotalUsersPerRoom(limit);
+
     async function limitTotalUsersPerRoom(limit) {
       const limitUsers = await io.in(room).clients((err, clients) => {
         let currentUsers = clients.length + 1;
@@ -26,7 +36,7 @@ io.on("connect", (socket) => {
           socket.emit("roomFull");
         } else {
           socket.emit("allowEntry", true);
-          const { error, user } = addUser({ id: socket.id, name, room });
+          const { error, user } = addUser({ id: socket.id, name, room, limit });
 
           if (error) return callback(error);
           else {
@@ -78,6 +88,24 @@ io.on("connect", (socket) => {
         users: getUsersInRoom(user.room),
       });
     }
+  });
+
+  socket.on("readyPlayer", (name, currentUsersList) => {
+    let userToReady = readyUser(socket.id, currentUsersList);
+    const user = getUser(socket.id);
+    if (userToReady !== undefined) {
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: userToReady,
+      });
+    }
+  });
+
+  socket.on("startGame", () => {
+    const user = getUser(socket.id);
+    io.to(user.room).emit("gameData", {
+      gameStarted: true,
+    });
   });
 });
 
