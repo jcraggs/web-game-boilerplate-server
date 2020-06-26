@@ -25,7 +25,7 @@ app.use(cors());
 io.on("connect", (socket) => {
   socket.on("join", ({ name, room }, callback) => {
     // Edit the number below to change the limit of users per room
-    limit = 10;
+    limit = 6;
     limitTotalUsersPerRoom(limit);
 
     async function limitTotalUsersPerRoom(limit) {
