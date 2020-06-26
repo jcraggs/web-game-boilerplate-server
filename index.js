@@ -32,6 +32,7 @@ io.on("connect", (socket) => {
       const limitUsers = await io.in(room).clients((err, clients) => {
         let currentUsers = clients.length + 1;
 
+        // Blocks entry if room is full
         if (currentUsers > limit) {
           socket.emit("roomFull");
         } else {

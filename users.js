@@ -8,8 +8,16 @@ const addUser = ({ id, name, room, limit }) => {
     (user) => user.room === room && user.name === name
   );
 
-  if (!name || !room) return { error: "Username and room are required." };
-  if (existingUser) return { error: `Username "${name}" is taken.` };
+  if (name.length > 10 || room.length > 10)
+    return {
+      error: {
+        msg: "Names and rooms can only be max 10 characters",
+        status: 401,
+      },
+    };
+
+  if (!name || !room) return { error: "Name and room are required." };
+  if (existingUser) return { error: `Name "${name}" is taken.` };
 
   const user = { id, name, room, ready: false, roomSizeLimit: limit };
 
