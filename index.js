@@ -58,6 +58,7 @@ io.on("connect", (socket) => {
         let currentUsers = clients.length + 1;
 
         gameStatusInfo.currentUsers = currentUsers;
+        gameStatusInfo.room = room;
 
         // Blocks entry if room is full
         if (currentUsers > limit) {
@@ -105,31 +106,78 @@ io.on("connect", (socket) => {
   socket.on("disconnect", () => {
     // Sends everyone back to the lobby if someone quits mid game
     console.log(gameStatusInfo);
-    if (
-      gameStatusInfo.currentUsers ===
-        gameStatusInfo.currentNumberOfClients - 1 &&
-      gameStatusInfo.currentUsers > 0
-    ) {
-      const user = getUser(socket.id);
 
-      if (user !== undefined) {
-        io.to(gameStatusInfo.room).emit("gameData", {
-          gameStarted: false,
-          returnReason: `${user.name} left the game.`,
-        });
-      } else {
-        io.to(gameStatusInfo.room).emit("gameData", {
-          gameStarted: false,
-          returnReason: `player left the game.`,
-        });
+    async function firstAsync() {
+      let promise = new Promise((res, rej) => {
+        io.of("/")
+          .in(gameStatusInfo.room)
+          .clients((error, clients) => {
+            let var123 = clients;
+            console.log("doing the io stuff");
+            res(var123);
+          });
+      });
+
+      // wait until the promise returns us a value
+      let usersConnected = await promise;
+
+      console.log(usersConnected);
+      console.log("UC length: " + usersConnected.length);
+      console.log("C users: " + gameStatusInfo.currentUsers);
+      console.log("cnoc: " + gameStatusInfo.currentNumberOfClients);
+
+      if (
+        usersConnected.length < gameStatusInfo.currentNumberOfClients &&
+        gameStatusInfo.currentUsers > 0
+      ) {
+        const user = getUser(socket.id);
+
+        if (user !== undefined) {
+          io.to(gameStatusInfo.room).emit("gameData", {
+            gameStarted: false,
+            returnReason: `${user.name} left the game.`,
+          });
+        } else {
+          io.to(gameStatusInfo.room).emit("gameData", {
+            gameStarted: false,
+            returnReason: `player left the game.`,
+          });
+        }
+        gameStatusInfo.currentUsers -= 1;
+        gameStatusInfo.gameHasStarted = false;
+        gameStatusInfo.currentNumberOfClients -= 1;
       }
 
-      gameStatusInfo.currentUsers -= 1;
-      gameStatusInfo.gameHasStarted = false;
-      gameStatusInfo.currentNumberOfClients -= 1;
+      return;
     }
 
-    console.log(gameStatusInfo);
+    if (gameStatusInfo.gameHasStarted === true) {
+      firstAsync();
+    }
+
+    // OLD CODE
+
+    // if (
+    //   gameStatusInfo.currentUsers === gameStatusInfo.currentNumberOfClients &&
+    //   gameStatusInfo.currentUsers > 0
+    // ) {
+    //   const user = getUser(socket.id);
+
+    //   if (user !== undefined) {
+    //     io.to(gameStatusInfo.room).emit("gameData", {
+    //       gameStarted: false,
+    //       returnReason: `${user.name} left the game.`,
+    //     });
+    //   } else {
+    //     io.to(gameStatusInfo.room).emit("gameData", {
+    //       gameStarted: false,
+    //       returnReason: `player left the game.`,
+    //     });
+    //   }
+    //   gameStatusInfo.currentUsers -= 1;
+    //   gameStatusInfo.gameHasStarted = false;
+    //   gameStatusInfo.currentNumberOfClients -= 1;
+    // }
 
     const user = removeUser(socket.id);
 
@@ -144,8 +192,6 @@ io.on("connect", (socket) => {
         users: getUsersInRoom(user.room),
       });
     }
-
-    console.log(gameStatusInfo);
   });
 
   socket.on("readyPlayer", (name, currentUsersList) => {
