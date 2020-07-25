@@ -38,6 +38,7 @@ io.on("connect", (socket) => {
       room
     ).server.engine.clientsCount;
     gameStatusInfo.gameHasStarted = true;
+    gameStatusInfo.room = room;
 
     if (user !== undefined) {
       io.to(user.room).emit("gameData", {
@@ -107,20 +108,17 @@ io.on("connect", (socket) => {
       gameStatusInfo.currentUsers === gameStatusInfo.currentNumberOfClients &&
       gameStatusInfo.currentUsers > 0
     ) {
-      gameStatusInfo.currentNumberOfClients = undefined;
+      const username = getUser(socket.id).name || "player";
+
+      io.to(gameStatusInfo.room).emit("gameData", {
+        gameStarted: false,
+        returnReason: `${username} left the game.`,
+      });
+      gameStatusInfo.currentUsers -= 1;
       gameStatusInfo.gameHasStarted = false;
-
-      const user = getUser(socket.id);
-
-      if (user !== undefined) {
-        io.to(user.room).emit("gameData", {
-          gameStarted: false,
-          returnReason: `${user.name} left the game.`,
-        });
-      }
+      gameStatusInfo.currentNumberOfClients -= 1;
     }
 
-    gameStatusInfo.currentUsers -= 1;
     const user = removeUser(socket.id);
 
     if (user !== undefined) {
