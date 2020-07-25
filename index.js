@@ -112,7 +112,7 @@ io.on("connect", (socket) => {
     ) {
       const user = getUser(socket.id);
 
-      if (user.name !== undefined) {
+      if (user !== undefined) {
         io.to(gameStatusInfo.room).emit("gameData", {
           gameStarted: false,
           returnReason: `${user.name} left the game.`,
@@ -144,6 +144,8 @@ io.on("connect", (socket) => {
         users: getUsersInRoom(user.room),
       });
     }
+
+    console.log(gameStatusInfo);
   });
 
   socket.on("readyPlayer", (name, currentUsersList) => {
