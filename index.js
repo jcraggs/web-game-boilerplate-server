@@ -104,6 +104,7 @@ io.on("connect", (socket) => {
 
   socket.on("disconnect", () => {
     // Sends everyone back to the lobby if someone quits mid game
+    console.log(gameStatusInfo);
     if (
       gameStatusInfo.currentUsers === gameStatusInfo.currentNumberOfClients &&
       gameStatusInfo.currentUsers > 0
@@ -118,6 +119,8 @@ io.on("connect", (socket) => {
       gameStatusInfo.gameHasStarted = false;
       gameStatusInfo.currentNumberOfClients -= 1;
     }
+
+    console.log(gameStatusInfo);
 
     const user = removeUser(socket.id);
 
