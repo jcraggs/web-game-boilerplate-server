@@ -18,8 +18,7 @@ const router = require("./router");
 const app = express();
 const server = http.createServer(app);
 
-// This pingInterval should allow mobiles to idle for 5 minutes without timing out
-const io = socketio(server, { pingInterval: 300000 });
+const io = socketio(server);
 
 app.use(router);
 app.use(cors());
