@@ -17,20 +17,47 @@ const router = require("./router");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server);
+
+// This pingInterval should allow mobiles to idle for 5 minutes without timing out
+const io = socketio(server, { pingInterval: 300000 });
 
 app.use(router);
 app.use(cors());
 
+// Reference object used to determine the state of the game on join
+gameStatusInfo = {};
+
+// Edit the number below to change the default limit of users per room
+limit = 4;
+
 io.on("connect", (socket) => {
+  socket.on("startGame", ({ room }) => {
+    const user = getUser(socket.id);
+
+    // Set the number of clients and the game starting to true
+    gameStatusInfo.currentNumberOfClients = io.in(
+      room
+    ).server.engine.clientsCount;
+    gameStatusInfo.gameHasStarted = true;
+
+    if (user !== undefined) {
+      io.to(user.room).emit("gameData", {
+        gameStarted: true,
+      });
+    }
+  });
+
   socket.on("join", ({ name, room }, callback) => {
-    // Edit the number below to change the limit of users per room
-    limit = 6;
-    limitTotalUsersPerRoom(limit);
+    // Stops extra users joining once a game has started
+    if (gameStatusInfo.gameHasStarted === true) {
+      limitTotalUsersPerRoom(gameStatusInfo.currentNumberOfClients);
+    } else limitTotalUsersPerRoom(limit);
 
     async function limitTotalUsersPerRoom(limit) {
       const limitUsers = await io.in(room).clients((err, clients) => {
         let currentUsers = clients.length + 1;
+
+        gameStatusInfo.currentUsers = currentUsers;
 
         // Blocks entry if room is full
         if (currentUsers > limit) {
@@ -76,6 +103,25 @@ io.on("connect", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    // Sends everyone back to the lobby if someone quits mid game
+    if (
+      gameStatusInfo.currentUsers === gameStatusInfo.currentNumberOfClients &&
+      gameStatusInfo.currentUsers > 0
+    ) {
+      gameStatusInfo.currentNumberOfClients = undefined;
+      gameStatusInfo.gameHasStarted = false;
+
+      const user = getUser(socket.id);
+
+      if (user !== undefined) {
+        io.to(user.room).emit("gameData", {
+          gameStarted: false,
+          returnReason: `${user.name} left the game.`,
+        });
+      }
+    }
+
+    gameStatusInfo.currentUsers -= 1;
     const user = removeUser(socket.id);
 
     if (user !== undefined) {
@@ -101,15 +147,6 @@ io.on("connect", (socket) => {
           users: userToReady,
         });
       }
-    }
-  });
-
-  socket.on("startGame", () => {
-    const user = getUser(socket.id);
-    if (user !== undefined) {
-      io.to(user.room).emit("gameData", {
-        gameStarted: true,
-      });
     }
   });
 });
