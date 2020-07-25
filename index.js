@@ -151,9 +151,14 @@ io.on("connect", (socket) => {
       return;
     }
 
-    if (gameStatusInfo.gameHasStarted === true) {
+    if (
+      gameStatusInfo.gameHasStarted === true &&
+      gameStatusInfo.currentUsers === gameStatusInfo.currentNumberOfClients
+    ) {
       firstAsync();
     }
+
+    gameStatusInfo.currentUsers -= 1;
 
     // OLD CODE
 
