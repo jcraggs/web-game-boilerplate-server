@@ -110,12 +110,20 @@ io.on("connect", (socket) => {
         gameStatusInfo.currentNumberOfClients - 1 &&
       gameStatusInfo.currentUsers > 0
     ) {
-      const username = getUser(socket.id).name || "player";
+      const user = getUser(socket.id);
 
-      io.to(gameStatusInfo.room).emit("gameData", {
-        gameStarted: false,
-        returnReason: `${username} left the game.`,
-      });
+      if (user.name !== undefined) {
+        io.to(gameStatusInfo.room).emit("gameData", {
+          gameStarted: false,
+          returnReason: `${user.name} left the game.`,
+        });
+      } else {
+        io.to(gameStatusInfo.room).emit("gameData", {
+          gameStarted: false,
+          returnReason: `player left the game.`,
+        });
+      }
+
       gameStatusInfo.currentUsers -= 1;
       gameStatusInfo.gameHasStarted = false;
       gameStatusInfo.currentNumberOfClients -= 1;
