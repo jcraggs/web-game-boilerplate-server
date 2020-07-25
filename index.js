@@ -106,7 +106,8 @@ io.on("connect", (socket) => {
     // Sends everyone back to the lobby if someone quits mid game
     console.log(gameStatusInfo);
     if (
-      gameStatusInfo.currentUsers === gameStatusInfo.currentNumberOfClients &&
+      gameStatusInfo.currentUsers ===
+        gameStatusInfo.currentNumberOfClients - 1 &&
       gameStatusInfo.currentUsers > 0
     ) {
       const username = getUser(socket.id).name || "player";
