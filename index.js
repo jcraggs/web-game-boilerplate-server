@@ -48,7 +48,7 @@ io.on("connect", (socket) => {
             res(var123);
           });
       });
-      gameStatusInfo.noOfClientsAtGameStart = await promise2;
+      gameStatusInfo.noOfClientsAtGameStart = await promise2.length;
       console.log(gameStatusInfo);
     }
 
