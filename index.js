@@ -75,13 +75,13 @@ io.on("connect", (socket) => {
       const limitUsers = await io.in(room).clients((err, clients) => {
         let currentUsers = clients.length + 1;
 
-        gameStatusInfo.currentUsers = currentUsers;
-        gameStatusInfo.room = room;
-
         // Blocks entry if room is full
         if (currentUsers > limit) {
           socket.emit("roomFull");
         } else {
+          gameStatusInfo.currentUsers = currentUsers;
+          gameStatusInfo.room = room;
+
           socket.emit("allowEntry", true);
           const { error, user } = addUser({ id: socket.id, name, room, limit });
 
