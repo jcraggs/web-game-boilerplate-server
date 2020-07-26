@@ -30,6 +30,7 @@ gameStatusInfo = {};
 limit = 4;
 
 io.on("connect", (socket) => {
+  debugger;
   socket.on("startGame", ({ room }) => {
     const user = getUser(socket.id);
 
@@ -41,6 +42,7 @@ io.on("connect", (socket) => {
 
     // Need to work out why noOfClientsAtGameStart is staying constant and always 1 different
     // in comparison to when serving off local host, suspect its an async issue..
+    console.log("!!!!!!!!!: ");
     console.log(gameStatusInfo.noOfClientsAtGameStart);
 
     gameStatusInfo.gameHasStarted = true;
