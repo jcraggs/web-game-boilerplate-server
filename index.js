@@ -48,7 +48,7 @@ io.on("connect", (socket) => {
             res(var123);
           });
       });
-      gameStatusInfo.noOfClientsAtGameStart = await promise2.length;
+      gameStatusInfo.noOfClientsAtGameStart = await promise2;
       console.log(gameStatusInfo);
     }
 
@@ -68,7 +68,7 @@ io.on("connect", (socket) => {
   socket.on("join", ({ name, room }, callback) => {
     // Stops extra users joining once a game has started
     if (gameStatusInfo.gameHasStarted === true) {
-      limitTotalUsersPerRoom(gameStatusInfo.noOfClientsAtGameStart);
+      limitTotalUsersPerRoom(gameStatusInfo.noOfClientsAtGameStart.length);
     } else limitTotalUsersPerRoom(limit);
 
     async function limitTotalUsersPerRoom(limit) {
@@ -147,11 +147,11 @@ io.on("connect", (socket) => {
       console.log("Users connected length: " + usersConnected.length);
       console.log("Curr. users: " + gameStatusInfo.currentUsers);
       console.log(
-        "noc at game start: " + gameStatusInfo.noOfClientsAtGameStart
+        "noc at game start: " + gameStatusInfo.noOfClientsAtGameStart.length
       );
 
       if (
-        usersConnected.length < gameStatusInfo.noOfClientsAtGameStart &&
+        usersConnected.length < gameStatusInfo.noOfClientsAtGameStart.length &&
         gameStatusInfo.currentUsers > 0
       ) {
         const user = getUser(socket.id);
@@ -182,7 +182,8 @@ io.on("connect", (socket) => {
 
     if (
       gameStatusInfo.gameHasStarted === true &&
-      gameStatusInfo.currentUsers === gameStatusInfo.noOfClientsAtGameStart &&
+      gameStatusInfo.currentUsers ===
+        gameStatusInfo.noOfClientsAtGameStart.length &&
       gameStatusInfo.noOfClientsAtGameStart !== undefined
     ) {
       firstAsync();
