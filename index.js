@@ -34,9 +34,15 @@ io.on("connect", (socket) => {
     const user = getUser(socket.id);
 
     // Set the number of clients and the game starting to true
-    gameStatusInfo.currentNumberOfClients = io.in(
+    // This is meant to record the number of clients at the point the game was started
+    gameStatusInfo.noOfClientsAtGameStart = io.in(
       room
     ).server.engine.clientsCount;
+
+    // Need to work out why noOfClientsAtGameStart is staying constant and always 1 different
+    // in comparison to when serving off local host, suspect its an async issue..
+    console.log(gameStatusInfo.noOfClientsAtGameStart);
+
     gameStatusInfo.gameHasStarted = true;
     gameStatusInfo.room = room;
 
@@ -50,7 +56,7 @@ io.on("connect", (socket) => {
   socket.on("join", ({ name, room }, callback) => {
     // Stops extra users joining once a game has started
     if (gameStatusInfo.gameHasStarted === true) {
-      limitTotalUsersPerRoom(gameStatusInfo.currentNumberOfClients);
+      limitTotalUsersPerRoom(gameStatusInfo.noOfClientsAtGameStart);
     } else limitTotalUsersPerRoom(limit);
 
     async function limitTotalUsersPerRoom(limit) {
@@ -91,6 +97,9 @@ io.on("connect", (socket) => {
         }
       });
     }
+
+    console.log("gamestatusinfo after joining: ");
+    console.log(gameStatusInfo);
   });
 
   socket.on("sendMessage", (message, callback) => {
@@ -105,6 +114,7 @@ io.on("connect", (socket) => {
 
   socket.on("disconnect", () => {
     // Sends everyone back to the lobby if someone quits mid game
+    console.log("diconnect triggered: ");
     console.log(gameStatusInfo);
 
     async function firstAsync() {
@@ -122,12 +132,14 @@ io.on("connect", (socket) => {
       let usersConnected = await promise;
 
       console.log(usersConnected);
-      console.log("UC length: " + usersConnected.length);
-      console.log("C users: " + gameStatusInfo.currentUsers);
-      console.log("cnoc: " + gameStatusInfo.currentNumberOfClients);
+      console.log("Users connected length: " + usersConnected.length);
+      console.log("Curr. users: " + gameStatusInfo.currentUsers);
+      console.log(
+        "noc at game start: " + gameStatusInfo.noOfClientsAtGameStart
+      );
 
       if (
-        usersConnected.length < gameStatusInfo.currentNumberOfClients &&
+        usersConnected.length < gameStatusInfo.noOfClientsAtGameStart &&
         gameStatusInfo.currentUsers > 0
       ) {
         const user = getUser(socket.id);
@@ -145,25 +157,31 @@ io.on("connect", (socket) => {
         }
         gameStatusInfo.currentUsers -= 1;
         gameStatusInfo.gameHasStarted = false;
-        gameStatusInfo.currentNumberOfClients -= 1;
+        gameStatusInfo.noOfClientsAtGameStart = undefined;
       }
 
+      console.log("after aysnc: ");
+      console.log(gameStatusInfo);
       return;
     }
 
+    console.log("before async: ");
+    console.log(gameStatusInfo);
+
     if (
       gameStatusInfo.gameHasStarted === true &&
-      gameStatusInfo.currentUsers === gameStatusInfo.currentNumberOfClients
+      gameStatusInfo.currentUsers === gameStatusInfo.noOfClientsAtGameStart &&
+      gameStatusInfo.noOfClientsAtGameStart !== undefined
     ) {
       firstAsync();
-    }
-
-    gameStatusInfo.currentUsers -= 1;
+    } else gameStatusInfo.currentUsers -= 1;
+    console.log("after it does a remove of current users: ");
+    console.log(gameStatusInfo);
 
     // OLD CODE
 
     // if (
-    //   gameStatusInfo.currentUsers === gameStatusInfo.currentNumberOfClients &&
+    //   gameStatusInfo.currentUsers === gameStatusInfo.noOfClientsAtGameStart &&
     //   gameStatusInfo.currentUsers > 0
     // ) {
     //   const user = getUser(socket.id);
@@ -181,7 +199,7 @@ io.on("connect", (socket) => {
     //   }
     //   gameStatusInfo.currentUsers -= 1;
     //   gameStatusInfo.gameHasStarted = false;
-    //   gameStatusInfo.currentNumberOfClients -= 1;
+    //   gameStatusInfo.noOfClientsAtGameStart -= 1;
     // }
 
     const user = removeUser(socket.id);
