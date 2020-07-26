@@ -33,27 +33,19 @@ io.on("connect", (socket) => {
   socket.on("startGame", ({ room }) => {
     const user = getUser(socket.id);
 
-    // Set the number of clients and the game starting to true
-    // This is meant to record the number of clients at the point the game was started
-    secondAsync();
-    // gameStatusInfo.noOfClientsAtGameStart = io.in(room).server.engine.clientsCount - 1;
-
-    async function secondAsync() {
-      let promise2 = new Promise((res, rej) => {
+    // Record the room + number of clients when the game started and set the game starting to true
+    getNoOfPlayersOnGameStart();
+    async function getNoOfPlayersOnGameStart() {
+      let noOfPlayersOnStart = new Promise((res, rej) => {
         io.of("/")
           .in(gameStatusInfo.room)
           .clients((error, clients) => {
-            let var123 = clients;
-            console.log("doing the io stuff");
-            res(var123);
+            let playersInRoom = clients;
+            res(playersInRoom);
           });
       });
-      gameStatusInfo.noOfClientsAtGameStart = await promise2;
-      console.log(gameStatusInfo);
+      gameStatusInfo.noOfClientsAtGameStart = await noOfPlayersOnStart;
     }
-
-    // Need to work out why noOfClientsAtGameStart is staying constant and always 1 different
-    // in comparison to when serving off local host, suspect its an async issue..
 
     gameStatusInfo.gameHasStarted = true;
     gameStatusInfo.room = room;
@@ -79,9 +71,6 @@ io.on("connect", (socket) => {
         if (currentUsers > limit) {
           socket.emit("roomFull");
         } else {
-          gameStatusInfo.currentUsers = currentUsers;
-          gameStatusInfo.room = room;
-
           socket.emit("allowEntry", true);
           const { error, user } = addUser({ id: socket.id, name, room, limit });
 
@@ -97,6 +86,9 @@ io.on("connect", (socket) => {
               text: `${user.name} has joined the room`,
             });
 
+            gameStatusInfo.currentUsers = currentUsers;
+            gameStatusInfo.room = room;
+
             socket.join(user.room);
 
             io.to(user.room).emit("roomData", {
@@ -109,9 +101,6 @@ io.on("connect", (socket) => {
         }
       });
     }
-
-    console.log("gamestatusinfo after joining: ");
-    console.log(gameStatusInfo);
   });
 
   socket.on("sendMessage", (message, callback) => {
@@ -126,29 +115,17 @@ io.on("connect", (socket) => {
 
   socket.on("disconnect", () => {
     // Sends everyone back to the lobby if someone quits mid game
-    console.log("diconnect triggered: ");
-    console.log(gameStatusInfo);
-
-    async function firstAsync() {
-      let promise = new Promise((res, rej) => {
+    async function getPlayersLeftInLobby() {
+      let playersLeftPromise = new Promise((res, rej) => {
         io.of("/")
           .in(gameStatusInfo.room)
           .clients((error, clients) => {
-            let var123 = clients;
-            console.log("doing the io stuff");
-            res(var123);
+            let remainingPlayers = clients;
+            res(remainingPlayers);
           });
       });
 
-      // wait until the promise returns us a value
-      let usersConnected = await promise;
-
-      console.log(usersConnected);
-      console.log("Users connected length: " + usersConnected.length);
-      console.log("Curr. users: " + gameStatusInfo.currentUsers);
-      console.log(
-        "noc at game start: " + gameStatusInfo.noOfClientsAtGameStart.length
-      );
+      let usersConnected = await playersLeftPromise;
 
       if (
         usersConnected.length < gameStatusInfo.noOfClientsAtGameStart.length &&
@@ -171,50 +148,19 @@ io.on("connect", (socket) => {
         gameStatusInfo.gameHasStarted = false;
         gameStatusInfo.noOfClientsAtGameStart = undefined;
       }
-
-      console.log("after aysnc: ");
-      console.log(gameStatusInfo);
       return;
     }
 
-    console.log("before async: ");
-    console.log(gameStatusInfo);
-
+    // This if statement works out if a disconnect is from an in-game player or from
+    // a player who tried to join when the game was in progress/ lobby was full
     if (
       gameStatusInfo.gameHasStarted === true &&
       gameStatusInfo.currentUsers ===
         gameStatusInfo.noOfClientsAtGameStart.length &&
       gameStatusInfo.noOfClientsAtGameStart !== undefined
     ) {
-      firstAsync();
+      getPlayersLeftInLobby();
     }
-    // else gameStatusInfo.currentUsers -= 1;
-    console.log("after it does a remove of current users: ");
-    console.log(gameStatusInfo);
-
-    // OLD CODE
-
-    // if (
-    //   gameStatusInfo.currentUsers === gameStatusInfo.noOfClientsAtGameStart &&
-    //   gameStatusInfo.currentUsers > 0
-    // ) {
-    //   const user = getUser(socket.id);
-
-    //   if (user !== undefined) {
-    //     io.to(gameStatusInfo.room).emit("gameData", {
-    //       gameStarted: false,
-    //       returnReason: `${user.name} left the game.`,
-    //     });
-    //   } else {
-    //     io.to(gameStatusInfo.room).emit("gameData", {
-    //       gameStarted: false,
-    //       returnReason: `player left the game.`,
-    //     });
-    //   }
-    //   gameStatusInfo.currentUsers -= 1;
-    //   gameStatusInfo.gameHasStarted = false;
-    //   gameStatusInfo.noOfClientsAtGameStart -= 1;
-    // }
 
     const user = removeUser(socket.id);
 
