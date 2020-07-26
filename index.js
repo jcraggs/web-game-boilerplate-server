@@ -30,20 +30,30 @@ gameStatusInfo = {};
 limit = 4;
 
 io.on("connect", (socket) => {
-  debugger;
   socket.on("startGame", ({ room }) => {
     const user = getUser(socket.id);
 
     // Set the number of clients and the game starting to true
     // This is meant to record the number of clients at the point the game was started
-    gameStatusInfo.noOfClientsAtGameStart = io.in(
-      room
-    ).server.engine.clientsCount;
+    secondAsync();
+    // gameStatusInfo.noOfClientsAtGameStart = io.in(room).server.engine.clientsCount - 1;
+
+    async function secondAsync() {
+      let promise2 = new Promise((res, rej) => {
+        io.of("/")
+          .in(gameStatusInfo.room)
+          .clients((error, clients) => {
+            let var123 = clients;
+            console.log("doing the io stuff");
+            res(var123);
+          });
+      });
+      gameStatusInfo.noOfClientsAtGameStart = await promise2;
+      console.log(gameStatusInfo);
+    }
 
     // Need to work out why noOfClientsAtGameStart is staying constant and always 1 different
     // in comparison to when serving off local host, suspect its an async issue..
-    console.log("!!!!!!!!!: ");
-    console.log(gameStatusInfo.noOfClientsAtGameStart);
 
     gameStatusInfo.gameHasStarted = true;
     gameStatusInfo.room = room;
@@ -176,7 +186,8 @@ io.on("connect", (socket) => {
       gameStatusInfo.noOfClientsAtGameStart !== undefined
     ) {
       firstAsync();
-    } else gameStatusInfo.currentUsers -= 1;
+    }
+    // else gameStatusInfo.currentUsers -= 1;
     console.log("after it does a remove of current users: ");
     console.log(gameStatusInfo);
 
