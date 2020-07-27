@@ -170,7 +170,9 @@ io.on("connect", (socket) => {
         text: `${user.name} has left the room`,
       });
 
-      gameStatusInfo.gameHasStarted = false;
+      io.to(user.room).emit("gameData", {
+        gameStarted: false,
+      });
 
       io.to(user.room).emit("roomData", {
         room: user.room,
